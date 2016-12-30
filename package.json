@@ -8,7 +8,8 @@
   "main": "generator.js",
   "scripts": {
     "start": "node ./",
-    "clean": "rm -f cached.json tag-cloud.js"
+    "clean": "rm -f cached.json tag-cloud.js",
+    "heroku": "npm start && git commit -am 'update' && git push"
   },
   "dependencies": {
     "tumblr.js": "^1.1.1"
