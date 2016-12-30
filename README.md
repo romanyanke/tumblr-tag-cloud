@@ -35,3 +35,18 @@ buildTumblrTagCloud([
   ...
 ])
 ```
+
+##Usage
+
+Publish generated `tag-cloud.js` as GitHub Pages and use it in your Tumblr theme like this:
+
+```
+<script>
+  function buildTumblrTagCloud(tags) {
+    document.querySelector('.tags').innerHTML = tags.map(function(data) {
+      return `<a href="/tagged/${data.tag}">${data.tag} (${data.count})</a>`
+    }).join('')
+  }
+</script>
+<script src="https://romanyanke.github.io/tumblr-tag-cloud/tag-cloud.js"></script>
+```
