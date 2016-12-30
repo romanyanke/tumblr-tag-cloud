@@ -1,0 +1,17 @@
+{
+  "name": "tumblr-tags",
+  "version": "0.0.1",
+  "author": "romanyanke",
+  "engines": {
+    "node": "7.1.0"
+  },
+  "main": "generator.js",
+  "scripts": {
+    "start": "node ./",
+    "clean": "rm -f cached.json tag-cloud.js"
+  },
+  "dependencies": {
+    "tumblr.js": "^1.1.1"
+  },
+  "license": "ISC"
+}
