@@ -62,7 +62,6 @@ function parseNextTags() {
       parseNextTags()
     } else {
       let newCache = {
-        date: new Date(),
         parsed: parsedPostsCount,
         tags: {}
       }
