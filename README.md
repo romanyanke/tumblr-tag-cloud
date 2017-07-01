@@ -30,7 +30,7 @@ You have to publish generated files somewhere. I suggest to use `gh-pages` so yo
     }).join(', ')
   }
 </script>
-<script src="https://romanyanke.github.io/me-yanke-tags/cloud.js"></script>
+<script src="https://romanyanke.github.io/tumblr-tag-cloud/cloud.js"></script>
 ```
 
 __NPM Commands__
