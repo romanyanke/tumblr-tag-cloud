@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node ./",
     "deploy": "gh-pages -d dist",
-    "update": "npm start && npm deploy"
+    "update": "npm start && npm run deploy"
   },
   "dependencies": {
     "gh-pages": "^1.0.0",
