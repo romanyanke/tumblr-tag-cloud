@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node ./",
     "deploy": "gh-pages -d dist",
+    "test": "jest",
     "update": "npm start && npm run deploy"
   },
   "dependencies": {
@@ -16,5 +17,8 @@
     "progress": "^2.0.0",
     "tumblr.js": "^1.1.1"
   },
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^22.0.4"
+  }
 }

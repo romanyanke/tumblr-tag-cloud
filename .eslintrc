@@ -1,22 +1,26 @@
 {
   "parser": "babel-eslint",
   "env": {
-    "node": true
+    "node": true,
+    "jest": true
   },
   "rules": {
     "quotes": [1, "single"],
     "no-unused-vars": [1],
     "no-undef": [2],
-    "comma-dangle": [2, "never"],
+    "comma-dangle": [2, "always-multiline"],
     "eol-last": [2],
     "no-trailing-spaces": [2],
     "one-var": [2, "never"],
-    "space-infix-ops": ["error", {"int32Hint": false}],
-    "space-before-function-paren": ["error", {
+    "space-infix-ops": ["error", { "int32Hint": false }],
+    "space-before-function-paren": [
+      "error",
+      {
         "anonymous": "never",
         "named": "never",
         "asyncArrow": "always"
-    }],
+      }
+    ],
     "space-before-blocks": [1, "always"],
     "eqeqeq": [2]
   }

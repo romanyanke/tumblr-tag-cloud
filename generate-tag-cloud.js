@@ -1,25 +1,25 @@
-const { updateCache } = require('./lib/cache')
 const { blogPosts } = require('./lib/api')
 const { getCache } = require('./lib/cache')
-const countPosts = require('./lib/countPosts')
-const saveFiles = require('./lib/saveFiles')
+const { writeFiles } = require('./lib/saveFiles')
 const bar = require('./lib/progressbar')
+const countPosts = require('./lib/countPosts')
 
 const POSTS_PER_REQUEST = 50
 const cachedPostsCount = getCache().posts
 let iteration = 0
 let progress
 
-function *generateRequest(requestsNeeded) {
+function* generateRequest(requestsNeeded) {
   while (iteration < requestsNeeded) {
     progress.tick()
     yield request(iteration++)
   }
 }
-const request = i => blogPosts({
-  limit: POSTS_PER_REQUEST,
-  offset: cachedPostsCount + i * POSTS_PER_REQUEST
-})
+const request = i =>
+  blogPosts({
+    limit: POSTS_PER_REQUEST,
+    offset: cachedPostsCount + i * POSTS_PER_REQUEST,
+  })
 
 const parseBlog = async () => {
   const totalPosts = await countPosts()
@@ -33,7 +33,7 @@ const parseBlog = async () => {
     ${totalPosts} post(s) found.
     ${cachedPostsCount} post(s) cached.
     Will send ${requestsNeeded} request(s).
-  `);
+  `)
 
   while (true) {
     const next = request.next()
@@ -44,35 +44,36 @@ const parseBlog = async () => {
 
     try {
       const data = await next.value()
-      data.posts.forEach(post => tags = tags.concat(post.tags))
+      data.posts.forEach(post => (tags = tags.concat(post.tags)))
     } catch ({ message }) {
       throw {
-        total: totalPosts,
-        saved: cachedPostsCount + iteration * POSTS_PER_REQUEST,
         message,
-        tags
+        saved: cachedPostsCount + iteration * POSTS_PER_REQUEST,
+        tags,
+        total: totalPosts,
       }
     }
   }
 
   return {
-    saved: totalPosts,
-    tags
+    saved: cachedPostsCount + requestsNeeded * POSTS_PER_REQUEST,
+    tags,
   }
 }
 
-
-parseBlog().then(data => {
-  console.log(`
+parseBlog()
+  .then(data => {
+    console.log(`
     All ${data.saved} post(s) are parsed and saved.
-  `);
-  saveFiles(updateCache(data))
-}).catch(data => {
-  console.error(`
+  `)
+    writeFiles(data)
+  })
+  .catch(data => {
+    console.error(`
     ${iteration} request(s) are succesfully sent.
     ${data.saved}/${data.total} post(s) parsed and saved.
     To continue parsing try agin later.
     Exit with error: "${data.message}"
   `)
-  saveFiles(updateCache(data))
-})
+    writeFiles(data)
+  })
