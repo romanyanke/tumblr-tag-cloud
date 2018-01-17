@@ -56,7 +56,7 @@ const parseBlog = async () => {
   }
 
   return {
-    saved: cachedPostsCount + requestsNeeded * POSTS_PER_REQUEST,
+    saved: totalPosts,
     tags,
   }
 }
