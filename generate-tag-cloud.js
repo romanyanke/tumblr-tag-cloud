@@ -15,6 +15,7 @@ function* generateRequest(requestsNeeded) {
     yield request(iteration++)
   }
 }
+
 const request = i =>
   blogPosts({
     limit: POSTS_PER_REQUEST,

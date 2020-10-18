@@ -1,4 +1,4 @@
 tumblr-cloud.config.js
-node_modules
 cache.json
 dist
+tmp
