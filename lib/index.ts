@@ -23,13 +23,7 @@ const cache = {
   ...readJSON(paths.cache),
 }
 const config = (savedConfig => {
-  const requiredConfigVariables = [
-    'TUMBLR_CONSUMER_KEY',
-    // 'TUMBLR_CONSUMER_SECRET',
-    // 'TUMBLR_TOKEN',
-    // 'TUMBLR_TOKEN_SECRET',
-    'TUMBLR_BLOG',
-  ]
+  const requiredConfigVariables = ['TUMBLR_CONSUMER_KEY', 'TUMBLR_BLOG']
 
   requiredConfigVariables.forEach(variable => {
     if (!savedConfig[variable]) {
@@ -55,7 +49,7 @@ const cachedPostsCount = cache.postsParsed
 let iteration = 0
 
 function* generateRequest(requestsNeeded: number) {
-  while (iteration < requestsNeeded) {
+  while (iteration++ < requestsNeeded) {
     yield makeRequest(iteration, requestsNeeded)
   }
 }
@@ -63,19 +57,23 @@ function* generateRequest(requestsNeeded: number) {
 const makeRequest = (currentRequest: number, requestsNeeded: number) => {
   console.log(`Request ${currentRequest}/${requestsNeeded}`)
 
-  return new Promise<any>((resolve, reject) => {
+  return new Promise<string[]>((resolve, reject) => {
     client.blogPosts(
       config.TUMBLR_BLOG,
       {
         limit: POSTS_PER_REQUEST,
         offset: cachedPostsCount + currentRequest * POSTS_PER_REQUEST,
       },
-      (err, data) => {
+      (err, data: { posts: Array<{ tags: string[] }> }) => {
         if (err) {
           reject(err)
         }
 
-        resolve(data)
+        const tags = data.posts.reduce<string[]>((acc, post) => {
+          return [...acc, ...post.tags]
+        }, [])
+
+        resolve(tags)
       },
     )
   })
@@ -95,7 +93,7 @@ const countTotalBlogPost = () => {
 
 const parseBlog = async () => {
   const totalPosts = await countTotalBlogPost()
-  const requestsNeeded = 2 // Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
+  const requestsNeeded = 1 // Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
 
   const request = generateRequest(requestsNeeded)
   let tags: string[] = []
@@ -114,11 +112,8 @@ const parseBlog = async () => {
         break
       }
 
-      const data = await next.value
-      console.log({ data111: data })
-
-      iteration++
-      data.posts.forEach((post: { tags: any }) => (tags = tags.concat(post.tags)))
+      const newTags = await next.value
+      tags = tags.concat(newTags)
     } catch ({ message }) {
       throw {
         message,
@@ -144,7 +139,7 @@ parseBlog()
   })
   .catch(data => {
     console.error(`
-    ${iteration} request(s) are succesfully sent.
+    ${iteration - 1} request(s) are succesfully sent.
     ${data.saved}/${data.total} post(s) parsed and saved.
     To continue parsing try again later.
     Exit with error: "${data.message}"
