@@ -1,6 +1,6 @@
-const tumblr = require('tumblr.js')
-const path = require('path')
-const fs = require('fs')
+import tumblr from 'tumblr.js'
+import path, { resolve } from 'path'
+import fs from 'fs'
 
 const paths = {
   dist: path.resolve(__dirname, '../dist'),
@@ -11,12 +11,12 @@ const paths = {
 
 const requiredFolders = [paths.dist, paths.tmp]
 requiredFolders.forEach(path => {
-  if (!fs.existsSync(paths.dist)) {
-    fs.mkdirSync(paths.dist)
+  if (!fs.existsSync(path)) {
+    fs.mkdirSync(path)
   }
 })
 
-const readJSON = path => (fs.existsSync(path) ? require(path) : {})
+const readJSON = (path: string) => (fs.existsSync(path) ? require(path) : {})
 const cache = {
   postsParsed: 0,
   tags: [],
@@ -25,9 +25,9 @@ const cache = {
 const config = (savedConfig => {
   const requiredConfigVariables = [
     'TUMBLR_CONSUMER_KEY',
-    'TUMBLR_CONSUMER_SECRET',
-    'TUMBLR_TOKEN',
-    'TUMBLR_TOKEN_SECRET',
+    // 'TUMBLR_CONSUMER_SECRET',
+    // 'TUMBLR_TOKEN',
+    // 'TUMBLR_TOKEN_SECRET',
     'TUMBLR_BLOG',
   ]
 
@@ -47,38 +47,54 @@ const config = (savedConfig => {
 })(readJSON(paths.config))
 
 const client = tumblr.createClient({
-  credentials: {
-    consumer_key: config.TUMBLR_CONSUMER_KEY,
-  },
-  returnPromises: true,
+  consumer_key: config.TUMBLR_CONSUMER_KEY,
 })
 
 const POSTS_PER_REQUEST = 50
 const cachedPostsCount = cache.postsParsed
 let iteration = 0
 
-function* generateRequest(requestsNeeded) {
+function* generateRequest(requestsNeeded: number) {
   while (iteration < requestsNeeded) {
     yield makeRequest(iteration, requestsNeeded)
   }
 }
-const makeRequest = (currentRequest, requestsNeeded) => {
+
+const makeRequest = (currentRequest: number, requestsNeeded: number) => {
   console.log(`Request ${currentRequest}/${requestsNeeded}`)
 
-  return blogPosts({
-    limit: POSTS_PER_REQUEST,
-    offset: cachedPostsCount + currentRequest * POSTS_PER_REQUEST,
+  return new Promise<any>((resolve, reject) => {
+    client.blogPosts(
+      config.TUMBLR_BLOG,
+      {
+        limit: POSTS_PER_REQUEST,
+        offset: cachedPostsCount + currentRequest * POSTS_PER_REQUEST,
+      },
+      (err, data) => {
+        if (err) {
+          reject(err)
+        }
+
+        resolve(data)
+      },
+    )
   })
 }
 
-const saveData = (data) => {
+const countTotalBlogPost = () => {
+  return new Promise<number>((resolve, reject) => {
+    client.blogInfo(config.TUMBLR_BLOG, (err, data) => {
+      if (err) {
+        reject(err)
+      }
 
-  const 
-
+      resolve(data.blog.total_posts)
+    })
+  })
 }
 
 const parseBlog = async () => {
-  const totalPosts = await client.blogInfo(config.TUMBLR_BLOG).then(data => data.blog.total_posts)
+  const totalPosts = await countTotalBlogPost()
   const requestsNeeded = 2 // Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
 
   const request = generateRequest(requestsNeeded)
@@ -98,10 +114,11 @@ const parseBlog = async () => {
         break
       }
 
-      const data = await next.value()
+      const data = await next.value
+      console.log({ data111: data })
 
       iteration++
-      data.posts.forEach(post => (tags = tags.concat(post.tags)))
+      data.posts.forEach((post: { tags: any }) => (tags = tags.concat(post.tags)))
     } catch ({ message }) {
       throw {
         message,
