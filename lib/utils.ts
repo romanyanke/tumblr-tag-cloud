@@ -1,7 +1,4 @@
-interface TagDataItem {
-  tag: string
-  count: number
-}
+import { TagDataItem } from './interface'
 
 export const mapTagsToData = (tags: string[]): TagDataItem[] => {
   const counters: Record<string, number> = {}

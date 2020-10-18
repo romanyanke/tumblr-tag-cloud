@@ -1,26 +1,8 @@
 import tumblr from 'tumblr.js'
-import path, { resolve } from 'path'
+import path from 'path'
 import fs from 'fs'
-
-interface Data extends Cache {
-  errorMessage?: string
-  totalPosts: number
-}
-
-interface Cache {
-  done: boolean
-  postProcessed: number
-  tags: string[]
-}
-
-enum ConfigKeys {
-  consumerKey = 'TUMBLR_CONSUMER_KEY',
-  blogName = 'TUMBLR_BLOG',
-}
-
-type Config = Record<ConfigKeys, string>
-
-console.log(ConfigKeys)
+import { ConfigKeys, Config, Data, Cache } from './interface'
+import { mapTagsToData, sumTagData } from './utils'
 
 const paths = {
   dist: path.resolve(__dirname, '../dist'),
@@ -39,7 +21,7 @@ requiredFolders.forEach(path => {
 const readJSON = <T extends {}>(path: string): Partial<T> =>
   fs.existsSync(path) ? require(path) : {}
 
-const cache: Cache = {
+const storedCache: Cache = {
   done: false,
   postProcessed: 0,
   tags: [],
@@ -68,7 +50,7 @@ const client = tumblr.createClient({
 })
 
 const POSTS_PER_REQUEST = 50
-const cachedPostsCount = cache.postProcessed
+const cachedPostsCount = storedCache.postProcessed
 let iteration = 0
 
 function* generateRequest(requestsNeeded: number) {
@@ -137,6 +119,7 @@ const parseBlog = async (): Promise<Data> => {
     } catch ({ message }) {
       const data: Data = {
         done: false,
+        iteration: iteration - 1,
         errorMessage: message,
         postProcessed: cachedPostsCount + iteration * POSTS_PER_REQUEST,
         tags,
@@ -149,7 +132,8 @@ const parseBlog = async (): Promise<Data> => {
 
   return {
     done: true,
-    postProcessed: iteration,
+    iteration,
+    postProcessed: totalPosts,
     totalPosts,
     tags,
   }
@@ -159,7 +143,7 @@ const writeCacheToDisk = (data: Data) => {
   const cache: Cache = {
     done: data.done,
     postProcessed: data.postProcessed,
-    tags: data.tags,
+    tags: sumTagData(storedCache.tags, mapTagsToData(data.tags)),
   }
 
   fs.writeFileSync(paths.cache, JSON.stringify(cache), 'utf-8')
