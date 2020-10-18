@@ -156,20 +156,21 @@ const writeDataToDisk = ({ tags }: Data) => {
   fs.writeFileSync(paths.distJSON, JSON.stringify(getUpdatedTags(tags)), 'utf-8')
 }
 
-parseBlog()
-  .then(data => {
-    writeCacheToDisk(data)
-    writeDataToDisk(data)
-    console.log(`
+export const parse = () =>
+  parseBlog()
+    .then(data => {
+      writeCacheToDisk(data)
+      writeDataToDisk(data)
+      console.log(`
       All ${data.totalPosts} post(s) are parsed and saved.
   `)
-  })
-  .catch((data: Data) => {
-    writeCacheToDisk(data)
-    console.error(`
+    })
+    .catch((data: Data) => {
+      writeCacheToDisk(data)
+      console.error(`
       ${iteration - 1} request(s) are succesfully sent.
       ${data.postProcessed}/${data.totalPosts} post(s) parsed and saved.
       To continue parsing try again later.
       Exit with error: "${data.errorMessage}"
   `)
-  })
+    })
