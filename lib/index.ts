@@ -96,7 +96,7 @@ const countTotalBlogPost = () =>
 
 const parseBlog = async (): Promise<Data> => {
   const totalPosts = await countTotalBlogPost()
-  const requestsNeeded = 1 // Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
+  const requestsNeeded = Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
 
   const request = generateRequest(requestsNeeded)
   let tags: string[] = []
