@@ -2,6 +2,26 @@ import tumblr from 'tumblr.js'
 import path, { resolve } from 'path'
 import fs from 'fs'
 
+interface Data extends Cache {
+  errorMessage?: string
+  totalPosts: number
+}
+
+interface Cache {
+  done: boolean
+  postProcessed: number
+  tags: string[]
+}
+
+enum ConfigKeys {
+  consumerKey = 'TUMBLR_CONSUMER_KEY',
+  blogName = 'TUMBLR_BLOG',
+}
+
+type Config = Record<ConfigKeys, string>
+
+console.log(ConfigKeys)
+
 const paths = {
   dist: path.resolve(__dirname, '../dist'),
   tmp: path.resolve(__dirname, '../tmp'),
@@ -16,14 +36,17 @@ requiredFolders.forEach(path => {
   }
 })
 
-const readJSON = (path: string) => (fs.existsSync(path) ? require(path) : {})
-const cache = {
-  postsParsed: 0,
+const readJSON = <T extends {}>(path: string): Partial<T> =>
+  fs.existsSync(path) ? require(path) : {}
+
+const cache: Cache = {
+  done: false,
+  postProcessed: 0,
   tags: [],
-  ...readJSON(paths.cache),
+  ...readJSON<Cache>(paths.cache),
 }
 const config = (savedConfig => {
-  const requiredConfigVariables = ['TUMBLR_CONSUMER_KEY', 'TUMBLR_BLOG']
+  const requiredConfigVariables: ConfigKeys[] = [ConfigKeys.blogName, ConfigKeys.consumerKey]
 
   requiredConfigVariables.forEach(variable => {
     if (!savedConfig[variable]) {
@@ -37,15 +60,15 @@ const config = (savedConfig => {
     }
   })
 
-  return savedConfig
-})(readJSON(paths.config))
+  return savedConfig as Config
+})(readJSON<Config>(paths.config))
 
 const client = tumblr.createClient({
   consumer_key: config.TUMBLR_CONSUMER_KEY,
 })
 
 const POSTS_PER_REQUEST = 50
-const cachedPostsCount = cache.postsParsed
+const cachedPostsCount = cache.postProcessed
 let iteration = 0
 
 function* generateRequest(requestsNeeded: number) {
@@ -54,10 +77,9 @@ function* generateRequest(requestsNeeded: number) {
   }
 }
 
-const makeRequest = (currentRequest: number, requestsNeeded: number) => {
-  console.log(`Request ${currentRequest}/${requestsNeeded}`)
-
-  return new Promise<string[]>((resolve, reject) => {
+const makeRequest = (currentRequest: number, requestsNeeded: number) =>
+  new Promise<string[]>((resolve, reject) => {
+    console.log(`Request ${currentRequest}/${requestsNeeded}`)
     client.blogPosts(
       config.TUMBLR_BLOG,
       {
@@ -77,10 +99,9 @@ const makeRequest = (currentRequest: number, requestsNeeded: number) => {
       },
     )
   })
-}
 
-const countTotalBlogPost = () => {
-  return new Promise<number>((resolve, reject) => {
+const countTotalBlogPost = () =>
+  new Promise<number>((resolve, reject) => {
     client.blogInfo(config.TUMBLR_BLOG, (err, data) => {
       if (err) {
         reject(err)
@@ -89,9 +110,8 @@ const countTotalBlogPost = () => {
       resolve(data.blog.total_posts)
     })
   })
-}
 
-const parseBlog = async () => {
+const parseBlog = async (): Promise<Data> => {
   const totalPosts = await countTotalBlogPost()
   const requestsNeeded = 1 // Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
 
@@ -115,34 +135,49 @@ const parseBlog = async () => {
       const newTags = await next.value
       tags = tags.concat(newTags)
     } catch ({ message }) {
-      throw {
-        message,
-        saved: cachedPostsCount + iteration * POSTS_PER_REQUEST,
+      const data: Data = {
+        done: false,
+        errorMessage: message,
+        postProcessed: cachedPostsCount + iteration * POSTS_PER_REQUEST,
         tags,
-        total: totalPosts,
+        totalPosts,
       }
+
+      throw data
     }
   }
 
   return {
-    saved: totalPosts,
+    done: true,
+    postProcessed: iteration,
+    totalPosts,
     tags,
   }
 }
 
+const writeCacheToDisk = (data: Data) => {
+  const cache: Cache = {
+    done: data.done,
+    postProcessed: data.postProcessed,
+    tags: data.tags,
+  }
+
+  fs.writeFileSync(paths.cache, JSON.stringify(cache), 'utf-8')
+}
+
 parseBlog()
   .then(data => {
+    writeCacheToDisk(data)
     console.log(`
-    All ${data.saved} post(s) are parsed and saved.
+    All ${data.totalPosts} post(s) are parsed and saved.
   `)
-    console.log(data)
   })
-  .catch(data => {
+  .catch((data: Data) => {
+    writeCacheToDisk(data)
     console.error(`
     ${iteration - 1} request(s) are succesfully sent.
-    ${data.saved}/${data.total} post(s) parsed and saved.
+    ${data.postProcessed}/${data.totalPosts} post(s) parsed and saved.
     To continue parsing try again later.
-    Exit with error: "${data.message}"
+    Exit with error: "${data.errorMessage}"
   `)
-    console.log(data)
   })
