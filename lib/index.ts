@@ -98,7 +98,7 @@ const parseBlog = async () => {
   const requestsNeeded = 2 // Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
 
   const request = generateRequest(requestsNeeded)
-  let tags = []
+  let tags: string[] = []
 
   console.log(`
     ${totalPosts} post(s) found.
