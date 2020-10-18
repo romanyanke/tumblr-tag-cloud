@@ -6,6 +6,7 @@ import { mapTagsToData, sumTagData } from './utils'
 
 const paths = {
   dist: path.resolve(__dirname, '../dist'),
+  distJSON: path.resolve(__dirname, '../dist/tags.json'),
   tmp: path.resolve(__dirname, '../tmp'),
   cache: path.resolve(__dirname, '../tmp/wip-cache.json'),
   config: path.resolve(__dirname, '../tumblr-cloud.config.js'),
@@ -139,29 +140,36 @@ const parseBlog = async (): Promise<Data> => {
   }
 }
 
+const getUpdatedTags = (tags: string[]) => sumTagData(storedCache.tags, mapTagsToData(tags))
+
 const writeCacheToDisk = (data: Data) => {
   const cache: Cache = {
     done: data.done,
     postProcessed: data.postProcessed,
-    tags: sumTagData(storedCache.tags, mapTagsToData(data.tags)),
+    tags: getUpdatedTags(data.tags),
   }
 
   fs.writeFileSync(paths.cache, JSON.stringify(cache), 'utf-8')
 }
 
+const writeDataToDisk = ({ tags }: Data) => {
+  fs.writeFileSync(paths.distJSON, JSON.stringify(getUpdatedTags(tags)), 'utf-8')
+}
+
 parseBlog()
   .then(data => {
     writeCacheToDisk(data)
+    writeDataToDisk(data)
     console.log(`
-    All ${data.totalPosts} post(s) are parsed and saved.
+      All ${data.totalPosts} post(s) are parsed and saved.
   `)
   })
   .catch((data: Data) => {
     writeCacheToDisk(data)
     console.error(`
-    ${iteration - 1} request(s) are succesfully sent.
-    ${data.postProcessed}/${data.totalPosts} post(s) parsed and saved.
-    To continue parsing try again later.
-    Exit with error: "${data.errorMessage}"
+      ${iteration - 1} request(s) are succesfully sent.
+      ${data.postProcessed}/${data.totalPosts} post(s) parsed and saved.
+      To continue parsing try again later.
+      Exit with error: "${data.errorMessage}"
   `)
   })
