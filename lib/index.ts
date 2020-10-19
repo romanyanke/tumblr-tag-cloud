@@ -31,8 +31,8 @@ export const parse = ({
   const storedCache = processCache(readJSON<CacheTags>(paths.cache.dirname))
   const client = tumblr.createClient({ consumer_key: consumerKey })
   const POSTS_PER_REQUEST = 50
-  let iteration = 0
   const cachedPostsCount = storedCache.getCache().postProcessed
+  let iteration = 0
 
   function* generateRequest(requestsNeeded: number) {
     while (iteration++ < requestsNeeded) {
