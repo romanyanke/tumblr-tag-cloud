@@ -18,6 +18,6 @@ export interface CacheTags {
 export interface ParseOptions {
   consumerKey: string
   blogName: string
-  cacheDir?: string
-  outDir?: string
+  cachePath?: string
+  outPath?: string
 }

@@ -6,8 +6,8 @@ import { normalizePathName } from './utils'
 import { processCache } from './cache'
 
 export const parse = ({
-  outDir = 'dist',
-  cacheDir = 'tmp',
+  outPath = 'dist',
+  cachePath = 'tmp',
   blogName,
   consumerKey,
 }: ParseOptions) => {
@@ -16,8 +16,8 @@ export const parse = ({
   }
 
   const paths = {
-    cache: normalizePathName(path.resolve(__dirname, cacheDir), 'cache.json'),
-    dist: normalizePathName(path.resolve(__dirname, outDir), 'tags.json'),
+    cache: normalizePathName(path.resolve(__dirname, cachePath), 'cache.json'),
+    dist: normalizePathName(path.resolve(__dirname, outPath), 'tags.json'),
   }
 
   const requiredFolders = [paths.cache, paths.dist]

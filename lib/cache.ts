@@ -15,8 +15,6 @@ export const getNextRecordValue = (record: Record<string, number>) => {
 
 export const processCache = (inputCache = getEmptyCache()) => {
   const cache = { ...inputCache }
-  let iteration = 0
-
   const addPostTag = (postId: string, tag: string) => {
     if (!cache.tags[tag]) {
       cache.tags[tag] = getNextRecordValue(cache.tags)
