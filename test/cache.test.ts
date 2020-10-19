@@ -1,4 +1,4 @@
-import { getNextRecordValue } from '../lib/cache'
+import { getNextRecordValue } from '../src/cache'
 
 describe('getNextRecordValue', () => {
   it('should retrun next index', () => {

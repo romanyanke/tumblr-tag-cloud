@@ -1,4 +1,4 @@
-import { normalizePathName } from '../lib/utils'
+import { normalizePathName } from '../src/utils'
 
 describe('normalizePathName', () => {
   it('should return dir and filename', () => {

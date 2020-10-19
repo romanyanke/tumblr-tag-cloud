@@ -1,5 +1,3 @@
-import { parse } from './lib'
+import { parse as tubmlrTagCloud } from './src'
 
-module.exports = () => {
-  parse
-}
+export default tubmlrTagCloud
