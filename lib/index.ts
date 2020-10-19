@@ -2,7 +2,7 @@ import tumblr from 'tumblr.js'
 import path from 'path'
 import fs from 'fs'
 import { ConfigKeys, Config, Data, Cache, ParseOptions } from './interface'
-import { mapTagsToData, sumTagData } from './utils'
+import { mapTagsToData, normalizePathName, sumTagData } from './utils'
 
 export const parse = ({
   outDir = 'dist',
@@ -10,20 +10,18 @@ export const parse = ({
   blogName,
   consumerKey,
 }: ParseOptions) => {
-  // const distPath = path.resolve(__dirname, outDir)
-  // const distJSON = path.resolve(distPath)
-  const paths = {
-    dist: path.resolve(__dirname, outDir),
-    distJSON: path.resolve(__dirname, '../dist/tags.json'),
-    tmp: path.resolve(__dirname, '../tmp'),
-    cache: path.resolve(__dirname, '../tmp/wip-cache.json'),
-    config: path.resolve(__dirname, '../tumblr-cloud.config.js'),
+  if (!blogName || !consumerKey) {
+    throw new Error('no `blogName` or `consumerKey` provided')
   }
 
-  const requiredFolders = [paths.dist, paths.tmp]
+  const cache = normalizePathName(path.resolve(__dirname, cacheDir), 'cache.json')
+  const dist = normalizePathName(path.resolve(__dirname, outDir), 'tags.json')
+  const configPath = path.resolve(__dirname, '../tumblr-cloud.config.js')
+
+  const requiredFolders = [cache, dist]
   requiredFolders.forEach(path => {
-    if (!fs.existsSync(path)) {
-      fs.mkdirSync(path)
+    if (!fs.existsSync(path.dirname)) {
+      fs.mkdirSync(path.dirname)
     }
   })
 
@@ -34,30 +32,10 @@ export const parse = ({
     done: false,
     postProcessed: 0,
     tags: [],
-    ...readJSON<Cache>(paths.cache),
+    ...readJSON<Cache>(cache.dirname),
   }
-  const config = (savedConfig => {
-    const requiredConfigVariables: ConfigKeys[] = [ConfigKeys.blogName, ConfigKeys.consumerKey]
 
-    requiredConfigVariables.forEach(variable => {
-      if (!savedConfig[variable]) {
-        if (!process.env[variable]) {
-          console.error(
-            `Invalid config. "${variable}" is not defined. See https://github.com/romanyanke/tumblr-tag-cloud#configuration for details.`,
-          )
-          process.exit(0)
-        }
-        savedConfig[variable] = process.env[variable]
-      }
-    })
-
-    return savedConfig as Config
-  })(readJSON<Config>(paths.config))
-
-  const client = tumblr.createClient({
-    consumer_key: config.TUMBLR_CONSUMER_KEY,
-  })
-
+  const client = tumblr.createClient({ consumer_key: consumerKey })
   const POSTS_PER_REQUEST = 50
   const cachedPostsCount = storedCache.postProcessed
   let iteration = 0
@@ -72,7 +50,7 @@ export const parse = ({
     new Promise<string[]>((resolve, reject) => {
       console.log(`Request ${currentRequest}/${requestsNeeded}`)
       client.blogPosts(
-        config.TUMBLR_BLOG,
+        blogName,
         {
           limit: POSTS_PER_REQUEST,
           offset: cachedPostsCount + currentRequest * POSTS_PER_REQUEST,
@@ -93,7 +71,7 @@ export const parse = ({
 
   const countTotalBlogPost = () =>
     new Promise<number>((resolve, reject) => {
-      client.blogInfo(config.TUMBLR_BLOG, (err, data) => {
+      client.blogInfo(blogName, (err, data) => {
         if (err) {
           reject(err)
         }
@@ -151,17 +129,17 @@ export const parse = ({
   const getUpdatedTags = (tags: string[]) => sumTagData(storedCache.tags, mapTagsToData(tags))
 
   const writeCacheToDisk = (data: Data) => {
-    const cache: Cache = {
+    const cacheData: Cache = {
       done: data.done,
       postProcessed: data.postProcessed,
       tags: getUpdatedTags(data.tags),
     }
 
-    fs.writeFileSync(paths.cache, JSON.stringify(cache), 'utf-8')
+    fs.writeFileSync(cache.path, JSON.stringify(cacheData), 'utf-8')
   }
 
   const writeDataToDisk = ({ tags }: Data) => {
-    fs.writeFileSync(paths.distJSON, JSON.stringify(getUpdatedTags(tags)), 'utf-8')
+    fs.writeFileSync(dist.path, JSON.stringify(getUpdatedTags(tags)), 'utf-8')
   }
 
   return parseBlog()
