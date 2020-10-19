@@ -6,7 +6,7 @@
   "typings": "./lib/interface.d.ts",
   "scripts": {
     "start": "ts-node ./src/index.ts",
-    "build": "tsc --build",
+    "build": "rm -rf lib && tsc --build && npm run dts",
     "dts": "tsc src/interface.ts --declaration --outDir lib",
     "test": "jest"
   },
