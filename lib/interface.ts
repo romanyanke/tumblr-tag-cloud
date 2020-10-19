@@ -24,3 +24,10 @@ export interface Cache {
   postProcessed: number
   tags: TagDataItem[]
 }
+
+export interface ParseOptions {
+  consumerKey: string
+  blogName: string
+  cacheDir?: string
+  outDir?: string
+}
