@@ -1,28 +1,18 @@
-export enum ConfigKeys {
-  consumerKey = 'TUMBLR_CONSUMER_KEY',
-  blogName = 'TUMBLR_BLOG',
-}
-
-export type Config = Record<ConfigKeys, string>
-
-export interface TagDataItem {
-  tag: string
-  count: number
-}
-
 export interface Data {
-  done: boolean
   errorMessage?: string
-  iteration: number
   postProcessed: number
   totalPosts: number
+}
+
+export interface TumblrPost {
+  id: string
   tags: string[]
 }
 
-export interface Cache {
-  done: boolean
+export interface CacheTags {
+  tags: Record<string, number>
+  posts: Record<string, number[]>
   postProcessed: number
-  tags: TagDataItem[]
 }
 
 export interface ParseOptions {
