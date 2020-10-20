@@ -8,7 +8,7 @@
     "start": "ts-node ./src/index.ts",
     "build": "rm -rf lib && tsc --build && npm run dts",
     "dts": "tsc --declaration --outDir lib",
-    "test": "jest"
+    "test": "jest ./test/*.ts"
   },
   "dependencies": {
     "tumblr.js": "^3.0.0"

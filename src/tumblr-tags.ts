@@ -88,7 +88,7 @@ export const parse = ({
           break
         }
         const posts = await next.value
-        posts.forEach(storedCache.addTags)
+        posts.forEach(storedCache.addPostTags)
       } catch ({ message }) {
         const data: Result = {
           errorMessage: message,
