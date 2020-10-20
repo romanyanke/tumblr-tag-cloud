@@ -1,4 +1,4 @@
-export interface Data {
+export interface Result {
   errorMessage?: string
   postProcessed: number
   totalPosts: number
@@ -12,10 +12,9 @@ export interface TumblrPost {
 export interface CacheTags {
   tags: Record<string, number>
   posts: Record<string, number[]>
-  postProcessed: number
 }
 
-export interface ParseOptions {
+export interface TumblrTagsOptions {
   consumerKey: string
   blogName: string
   cachePath?: string

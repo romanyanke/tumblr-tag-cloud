@@ -1,7 +1,7 @@
 import tumblr from 'tumblr.js'
 import path from 'path'
 import fs from 'fs'
-import { Data, CacheTags, ParseOptions, TumblrPost } from './interface'
+import { Result, CacheTags, TumblrTagsOptions, TumblrPost } from './interface'
 import { normalizePathName } from './utils'
 import { processCache } from './cache'
 
@@ -10,7 +10,7 @@ export const parse = ({
   cachePath = 'tmp',
   blogName,
   consumerKey,
-}: ParseOptions) => {
+}: TumblrTagsOptions) => {
   if (!blogName || !consumerKey) {
     throw new Error('no `blogName` or `consumerKey` provided')
   }
@@ -31,7 +31,7 @@ export const parse = ({
   const storedCache = processCache(readJSON<CacheTags>(paths.cache.dirname))
   const client = tumblr.createClient({ consumer_key: consumerKey })
   const POSTS_PER_REQUEST = 50
-  const cachedPostsCount = storedCache.getCache().postProcessed
+  const cachedPostsCount = storedCache.countCachedPosts()
   let iteration = 0
 
   function* generateRequest(requestsNeeded: number) {
@@ -70,7 +70,7 @@ export const parse = ({
       })
     })
 
-  const parseBlog = async (): Promise<Data> => {
+  const parseBlog = async (): Promise<Result> => {
     const totalPosts = await countTotalBlogPost()
     const requestsNeeded = Math.ceil((totalPosts - cachedPostsCount) / POSTS_PER_REQUEST)
     const request = generateRequest(requestsNeeded)
@@ -90,7 +90,7 @@ export const parse = ({
         const posts = await next.value
         posts.forEach(storedCache.addTags)
       } catch ({ message }) {
-        const data: Data = {
+        const data: Result = {
           errorMessage: message,
           postProcessed: cachedPostsCount + iteration * POSTS_PER_REQUEST,
           totalPosts,
@@ -120,7 +120,7 @@ export const parse = ({
       All ${data.totalPosts} post(s) are parsed and saved.
   `)
     })
-    .catch((data: Data) => {
+    .catch((data: Result) => {
       console.error(`
         ${iteration - 1} request(s) are succesfully sent.
         ${data.postProcessed}/${data.totalPosts} post(s) parsed and saved.

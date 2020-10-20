@@ -1,7 +1,6 @@
 import { CacheTags } from './interface'
 
 const getEmptyCache = (): CacheTags => ({
-  postProcessed: 0,
   posts: {},
   tags: {},
 })
@@ -26,7 +25,6 @@ export const processCache = (inputCache = getEmptyCache()) => {
 
     const tagId = cache.tags[tag]
     cache.posts[postId].push(tagId)
-    cache.postProcessed += 1
   }
 
   const addTags = (post: { tags: string[]; id: string }) =>
@@ -34,8 +32,11 @@ export const processCache = (inputCache = getEmptyCache()) => {
 
   const getCache = () => cache
 
+  const countCachedPosts = () => Object.keys(cache.posts).length
+
   return {
     addTags,
     getCache,
+    countCachedPosts,
   }
 }
