@@ -2,22 +2,18 @@ import tumblr from 'tumblr.js'
 import path from 'path'
 import fs from 'fs'
 import { Result, CacheTags, TumblrTagsOptions, TumblrPost } from './interface'
-import { normalizePathName, readSafeJSON } from './utils'
+import { getParentModuleDir, normalizePathName, readSafeJSON } from './utils'
 import { processCache } from './cache'
 
 export const parseTumblrPosts = ({
   outPath = 'dist',
   cachePath = 'tmp',
-  blogName,
+  blog: blogName,
   consumerKey,
 }: TumblrTagsOptions) => {
-  if (!blogName || !consumerKey) {
-    throw new Error('no `blogName` or `consumerKey` provided')
-  }
-
   const paths = {
-    cache: normalizePathName(path.resolve(__dirname, cachePath), 'cache.json'),
-    dist: normalizePathName(path.resolve(__dirname, outPath), 'tags.json'),
+    cache: normalizePathName(path.resolve(getParentModuleDir(), cachePath), 'cache.json'),
+    dist: normalizePathName(path.resolve(getParentModuleDir(), outPath), 'tags.json'),
   }
 
   const requiredFolders = [paths.cache, paths.dist]
@@ -27,7 +23,7 @@ export const parseTumblrPosts = ({
     }
   })
 
-  const storedCache = processCache(readSafeJSON<CacheTags>(paths.cache.dirname))
+  const storedCache = processCache(readSafeJSON<CacheTags>(paths.cache.path))
   const client = tumblr.createClient({ consumer_key: consumerKey })
   const POSTS_PER_REQUEST = 50
   const cachedPostsCount = storedCache.countCachedPosts()
@@ -42,20 +38,16 @@ export const parseTumblrPosts = ({
   const makeRequest = (currentRequest: number, requestsNeeded: number) =>
     new Promise<TumblrPost[]>((resolve, reject) => {
       console.log(`Request ${currentRequest}/${requestsNeeded}`)
-      client.blogPosts(
-        blogName,
-        {
-          limit: POSTS_PER_REQUEST,
-          offset: cachedPostsCount + currentRequest * POSTS_PER_REQUEST,
-        },
-        (err, data: { posts: TumblrPost[] }) => {
-          if (err) {
-            reject(err)
-          }
+      const limit = POSTS_PER_REQUEST
+      const offset = cachedPostsCount + currentRequest * POSTS_PER_REQUEST - POSTS_PER_REQUEST
 
-          resolve(data.posts)
-        },
-      )
+      client.blogPosts(blogName, { limit, offset }, (err, data: { posts: TumblrPost[] }) => {
+        if (err) {
+          reject(err)
+        }
+
+        resolve(data.posts)
+      })
     })
 
   const countTotalBlogPost = () =>
@@ -83,9 +75,11 @@ export const parseTumblrPosts = ({
     while (true) {
       try {
         const next = request.next()
+
         if (next.done) {
           break
         }
+
         const posts = await next.value
         posts.forEach(storedCache.addPostTags)
       } catch ({ message }) {

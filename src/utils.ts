@@ -1,5 +1,15 @@
 import path from 'path'
 import fs from 'fs'
+import readPkgUp from 'read-pkg-up'
+
+const upPackagePath = readPkgUp.sync()?.path
+export const getParentModuleDir = () => {
+  if (!upPackagePath) {
+    throw new Error('parent module not found')
+  }
+
+  return path.parse(upPackagePath).dir
+}
 
 export const readSafeJSON = <T extends {}>(path: string): T =>
   fs.existsSync(path) ? require(path) : {}

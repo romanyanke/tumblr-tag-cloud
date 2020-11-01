@@ -13,7 +13,7 @@ export const getNextRecordValue = (record: Record<string, number>) => {
 }
 
 export const processCache = (inputCache = getEmptyCache()) => {
-  const cache = { ...inputCache }
+  const cache = { ...getEmptyCache(), ...inputCache }
   const addPostTag = (postId: string, tag: string) => {
     if (typeof cache.tags[tag] === 'undefined') {
       cache.tags[tag] = getNextRecordValue(cache.tags)
@@ -31,7 +31,7 @@ export const processCache = (inputCache = getEmptyCache()) => {
 
   const getCache = () => cache
 
-  const countCachedPosts = () => Object.keys(cache.posts).length
+  const countCachedPosts = () => (cache.posts ? Object.keys(cache.posts).length : 0)
 
   return {
     addPostTags,

@@ -26,6 +26,7 @@
     "find-config": "^1.0.0",
     "jest": "^26.5.3",
     "prettier": "^2.1.2",
+    "read-pkg-up": "^7.0.1",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.3",
     "yargs": "^16.1.0"

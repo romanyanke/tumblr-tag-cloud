@@ -1,8 +1,10 @@
 #! /usr/bin/env node
 import yargs from 'yargs'
-import { TumblrTagsConfig } from './interface'
-import { readSafeJSON } from './utils'
+import path from 'path'
+import { TumblrTagsOptions } from './interface'
+import { getParentModuleDir, readSafeJSON } from './utils'
 import findConfig from 'find-config'
+import tubmlrTagCloud from '.'
 
 process.on('unhandledRejection', reason => {
   console.error('Unhandled rejection', reason)
@@ -20,8 +22,8 @@ const getConfig = (path: string) => {
     throw new Error(`Can't find config in "${path}"`)
   }
 
-  const config = readSafeJSON<TumblrTagsConfig>(configPath)
-  const requiredKeys: Array<keyof TumblrTagsConfig> = ['blog', 'consumerKey']
+  const config = readSafeJSON<TumblrTagsOptions>(configPath)
+  const requiredKeys: Array<keyof TumblrTagsOptions> = ['blog', 'consumerKey']
 
   requiredKeys.forEach(key => {
     if (!config[key]) {
@@ -63,8 +65,7 @@ yargs
     'Parse all posts',
     yargs => {},
     argv => {
-      const config = getConfig(argv.config)
-      console.log('get all data', config)
+      tubmlrTagCloud(getConfig(argv.config))
     },
   )
 
