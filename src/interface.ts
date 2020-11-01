@@ -20,3 +20,8 @@ export interface TumblrTagsOptions {
   cachePath?: string
   outPath?: string
 }
+
+export interface TumblrTagsConfig {
+  blog: string
+  consumerKey: string
+}

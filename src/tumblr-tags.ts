@@ -2,10 +2,10 @@ import tumblr from 'tumblr.js'
 import path from 'path'
 import fs from 'fs'
 import { Result, CacheTags, TumblrTagsOptions, TumblrPost } from './interface'
-import { normalizePathName } from './utils'
+import { normalizePathName, readSafeJSON } from './utils'
 import { processCache } from './cache'
 
-export const parse = ({
+export const parseTumblrPosts = ({
   outPath = 'dist',
   cachePath = 'tmp',
   blogName,
@@ -27,8 +27,7 @@ export const parse = ({
     }
   })
 
-  const readJSON = <T extends {}>(path: string): T => (fs.existsSync(path) ? require(path) : {})
-  const storedCache = processCache(readJSON<CacheTags>(paths.cache.dirname))
+  const storedCache = processCache(readSafeJSON<CacheTags>(paths.cache.dirname))
   const client = tumblr.createClient({ consumer_key: consumerKey })
   const POSTS_PER_REQUEST = 50
   const cachedPostsCount = storedCache.countCachedPosts()

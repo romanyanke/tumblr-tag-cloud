@@ -1,4 +1,8 @@
 import path from 'path'
+import fs from 'fs'
+
+export const readSafeJSON = <T extends {}>(path: string): T =>
+  fs.existsSync(path) ? require(path) : {}
 
 export const normalizePathName = (pathname: string, fileNameFallback: string) => {
   const { ext, dir, base } = path.parse(pathname)
