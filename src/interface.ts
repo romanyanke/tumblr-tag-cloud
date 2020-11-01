@@ -15,6 +15,11 @@ export interface CacheTags {
 }
 
 export interface TumblrTagsOptions {
+  config: TumblrTagsConfig
+  requestedPostIds?: number[]
+}
+
+export interface TumblrTagsConfig {
   consumerKey: string
   blog: string
   cachePath?: string

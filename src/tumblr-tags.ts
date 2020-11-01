@@ -4,12 +4,11 @@ import fs from 'fs'
 import { Result, CacheTags, TumblrTagsOptions, TumblrPost } from './interface'
 import { getParentModuleDir, normalizePathName, readSafeJSON } from './utils'
 import { processCache } from './cache'
+import { isArray } from 'util'
 
 export const parseTumblrPosts = ({
-  outPath = 'dist',
-  cachePath = 'tmp',
-  blog: blogName,
-  consumerKey,
+  config: { outPath = 'dist', cachePath = 'tmp', blog: blogName, consumerKey },
+  requestedPostIds,
 }: TumblrTagsOptions) => {
   const paths = {
     cache: normalizePathName(path.resolve(getParentModuleDir(), cachePath), 'cache.json'),
@@ -31,11 +30,11 @@ export const parseTumblrPosts = ({
 
   function* generateRequest(requestsNeeded: number) {
     while (iteration++ < requestsNeeded) {
-      yield makeRequest(iteration, requestsNeeded)
+      yield makePageRequest(iteration, requestsNeeded)
     }
   }
 
-  const makeRequest = (currentRequest: number, requestsNeeded: number) =>
+  const makePageRequest = (currentRequest: number, requestsNeeded: number) =>
     new Promise<TumblrPost[]>((resolve, reject) => {
       console.log(`Request ${currentRequest}/${requestsNeeded}`)
       const limit = POSTS_PER_REQUEST
@@ -47,6 +46,23 @@ export const parseTumblrPosts = ({
         }
 
         resolve(data.posts)
+      })
+    })
+
+  const makePostRequest = (postId: number) =>
+    new Promise<TumblrPost>((resolve, reject) => {
+      client.blogPosts(blogName, { id: postId }, (err, data: { posts: TumblrPost[] }) => {
+        if (err) {
+          reject(err)
+        }
+
+        const post = data?.posts[0]
+
+        if (!post) {
+          reject(`Can't find post ${postId}`)
+        }
+
+        resolve(post)
       })
     })
 
@@ -107,21 +123,43 @@ export const parseTumblrPosts = ({
     process.exit()
   })
 
-  return parseBlog()
-    .then(data => {
+  if (requestedPostIds) {
+    return Promise.allSettled(requestedPostIds.map(id => makePostRequest(id))).then(posts => {
+      posts.forEach(result => {
+        if (result.status === 'fulfilled') {
+          storedCache.addPostTags(result.value)
+        }
+      })
+
+      const requestedCount = posts.length
+      const successCount = posts.filter(result => result.status === 'fulfilled').length
+      const rejectedCount = posts.filter(result => result.status === 'rejected').length
+
       console.log(`
+      Requested posts: ${requestedCount}
+      Successful: ${successCount}
+      Rejected: ${rejectedCount}
+`)
+
+      writeDataToDisk()
+    })
+  } else {
+    return parseBlog()
+      .then(data => {
+        console.log(`
       All ${data.totalPosts} post(s) are parsed and saved.
   `)
-    })
-    .catch((data: Result) => {
-      console.error(`
+      })
+      .catch((data: Result) => {
+        console.error(`
         ${iteration - 1} request(s) are succesfully sent.
         ${data.postProcessed}/${data.totalPosts} post(s) parsed and saved.
         To continue parsing try again later.
         Exit with error: "${data.errorMessage}"
   `)
-    })
-    .finally(() => {
-      writeDataToDisk()
-    })
+      })
+      .finally(() => {
+        writeDataToDisk()
+      })
+  }
 }
