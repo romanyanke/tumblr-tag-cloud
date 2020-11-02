@@ -55,8 +55,6 @@ yargs
       })
     },
     argv => {
-      // const config = getConfig(argv.config)
-      // console.log('parse', argv.ids, argv.config)
       tubmlrTagCloud({ config: getConfig(argv.config), requestedPostIds: argv.ids as number[] })
     },
   )

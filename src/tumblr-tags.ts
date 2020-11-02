@@ -4,14 +4,21 @@ import fs from 'fs'
 import { Result, CacheTags, TumblrTagsOptions, TumblrPost } from './interface'
 import { getParentModuleDir, normalizePathName, readSafeJSON } from './utils'
 import { processCache } from './cache'
-import { isArray } from 'util'
+import { parseTags } from './parser'
+import { constant, identity } from 'lodash'
 
-export const parseTumblrPosts = ({
-  config: { outPath = 'dist', cachePath = 'tmp', blog: blogName, consumerKey },
+export const parseTumblrPosts = async ({
+  config: {
+    outPath = 'dist',
+    sourcePath: cachePath = 'tmp',
+    blog: blogName,
+    consumerKey,
+    transform,
+  },
   requestedPostIds,
 }: TumblrTagsOptions) => {
   const paths = {
-    cache: normalizePathName(path.resolve(getParentModuleDir(), cachePath), 'cache.json'),
+    cache: normalizePathName(path.resolve(getParentModuleDir(), cachePath), 'source.json'),
     dist: normalizePathName(path.resolve(getParentModuleDir(), outPath), 'tags.json'),
   }
 
@@ -114,8 +121,10 @@ export const parseTumblrPosts = ({
 
   const writeDataToDisk = () => {
     const data = storedCache.getCache()
+    const parsed = parseTags(data, { transform })
 
     fs.writeFileSync(paths.cache.path, JSON.stringify(data), 'utf-8')
+    fs.writeFileSync(paths.dist.path, JSON.stringify(parsed), 'utf-8')
   }
 
   process.on('SIGINT', () => {
@@ -124,25 +133,21 @@ export const parseTumblrPosts = ({
   })
 
   if (requestedPostIds) {
-    return Promise.allSettled(requestedPostIds.map(id => makePostRequest(id))).then(posts => {
-      posts.forEach(result => {
-        if (result.status === 'fulfilled') {
-          storedCache.addPostTags(result.value)
-        }
-      })
-
-      const requestedCount = posts.length
-      const successCount = posts.filter(result => result.status === 'fulfilled').length
-      const rejectedCount = posts.filter(result => result.status === 'rejected').length
-
-      console.log(`
+    const posts_1 = await Promise.allSettled(requestedPostIds.map(id => makePostRequest(id)))
+    posts_1.forEach(result_3 => {
+      if (result_3.status === 'fulfilled') {
+        storedCache.addPostTags(result_3.value)
+      }
+    })
+    const requestedCount = posts_1.length
+    const successCount = posts_1.filter(result_4 => result_4.status === 'fulfilled').length
+    const rejectedCount = posts_1.filter(result_5 => result_5.status === 'rejected').length
+    console.log(`
       Requested posts: ${requestedCount}
       Successful: ${successCount}
       Rejected: ${rejectedCount}
 `)
-
-      writeDataToDisk()
-    })
+    writeDataToDisk()
   } else {
     return parseBlog()
       .then(data => {

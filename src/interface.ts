@@ -19,9 +19,19 @@ export interface TumblrTagsOptions {
   requestedPostIds?: number[]
 }
 
-export interface TumblrTagsConfig {
+export interface TumblrTagsConfig extends TumblrTagsParserOptions {
   consumerKey: string
   blog: string
-  cachePath?: string
+
+  sourcePath?: string
   outPath?: string
+}
+
+export interface TumblrTagsParserOptions {
+  transform?<T extends any>(data: ParsedTag[]): T
+}
+
+export interface ParsedTag {
+  tag: string
+  count: number
 }
