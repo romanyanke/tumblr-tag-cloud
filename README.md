@@ -1,3 +1,6 @@
+# DEPRECATED
+# You better use [tumblr-tags](https://www.npmjs.com/package/tumblr-tags) now
+
 # Tumblr Tag Cloud
 
 Generates a JSON file (and optionally `.js` file for JSONP) with all tags used in the tumblr blog. Caches the result so script can be executed many times to update existing tag cloud with new tags.
